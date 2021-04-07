@@ -1,0 +1,126 @@
+Sobre la construcción del grafo.
+
+
+Los primeros problemas son que los lados vienen en una lista no ordenada
+ y los vértices son cualquier número entre 0 y un número muy grande.
+
+Suspendamos estos problemas, y supongamos por el momento que los
+lados vienen ordenados y los vértices son números entre 0 y n-1.
+
+Debemos guardar los lados y ademas datos sobre cada vértice (color, grado).
+
+Para lo primero una posibilidad rapida de guardar los lados y de acceder a los mismos seria
+usar una matriz de adyacencia.
+
+Pero una matriz de adyacencia necesita n^2 memoria. ("^" es exponenciación, no el XOR de C).
+
+Dado que hay grafos que usaremos con n del orden de millones,
+n^2 será del orden de 10^12, necesitarian un terabyte de memoria o mas.
+Asi que no es una buena idea.
+
+
+Asi que lo único razonable que queda es guardar el grafo mediante listas de adyacencia:
+cada vértice tiene que tener guardado en algún lugar la lista de vécinos.
+
+Ahora bien, esto se puede hacer de 3 formas al menos (hay otras)
+
+A) Una opción bastante usada por muchos grupos es usar listas enlazadas, asociando a cada vértice el link al primer vecino.
+En general, esto va a resultar demasiado lento cuando haya que recorrer los vecinos y es dudoso que puedan implementar algunas de las funciones de leer datos de vecinos en tiempo O(1) con listas enlazadas.
+
+B) Crear para cada vértice un array de vecinos y asociar al vértice un puntero al array.
+
+C) Crear un solo array de longitud 2m (pues suma de los grados=2m por el lema del apreton de manos) que contenga todos los posibles vecinos, de forma que los vecinos de un vértice esten todos consecutivos, y asociar a un vértice simplemente en donde debe empezar a leer "sus" vecinos. (y donde debe terminar lo puede deducir del grado)
+
+En general tanto B) como C) funcionan bien.
+
+
+Entonces tendriamos que asociar a cada vértice al menos 3 cosas:
+grado, color y o bien un puntero a los vecinos o donde empezar a leer en el array de vecinos.
+
+
+Hay dos formas principales de hacer esto, aunque no son las unicas.
+
+Una, es crear una estructura "Vértice" o algo con nombre similar, que tenga los campos adecuados.
+
+La otra es simplemente crear 3 arrays distintos, pej un array Color[], donde Color[0] es el color del vértice 0,
+Color[1] el color del vértice 1, etc, otro array Grado[] donde Grado[0] es el grado del vértice 0, etc.
+
+Ambas ideas suelen funcionar bien.
+
+Si usan la primera opción es recomendable no usar dentro de la estructura "Vértice" un campo de tipo "Vértice", no porque esto este mal en general sino porque suele crear problemas con la funcion "CopiarGrafo", o al menos eso ocurrió con algunos grupos. (como yo personalmente no use eso, no recuerdo exactamente cuales eran los problemas, solo que habia problemas).
+
+
+Ahora volvamos a los dos problemas originales.
+
+Dado que los vértices pueden ser cualquier número, entonces lo logico es hacer como lo descripto arriba, excepto que cada vértice deberia ser mapeado a un número entre 0 y n-1 de alguna forma, y habria que agregar un nuevo dato "Nombre" del vértice, ya sea como campo a la estructura "Vertice" o como un array extra Nombre[], porque ahora no sera cierto que el vértice que ocupa el lugar 0 sera el vértice 0, pues podria ser pej el 372485.
+
+
+Como implementar esto?
+Lo mas facil es que al primer vértice que veamos lo asignamos al 0, al segundo al 1, etc.
+Esto es algo muy usado por muchos grupos y *********no va a andar.************
+
+Si cada vez que encuentran un nuevo lado "e x y" deben buscat entre los vértices ya guardados a ver si a "x" y a "y" ya los tienen o son "nuevos" y en el caso que ya existan, donde estan guardados,terminan teniendo un programa que es O(nm).
+
+Y O(nm) para n y m en el orden de millones no es una buena idea.
+
+
+Algunas ideas que si funcionan:
+
+
+
+1) Usar funciones de hash (no criptográfica, sino de las "normales").
+Esto sirve para "comprimir" el rango de los u32s a un rango manejable.
+
+Esta es una estrategia válida que muchos grupos usan, con resultados satisfactorios.
+
+
+Pero hay que saber usar funciones de hash y algunos no la implementan del todo correctamente, y si bien empiezan
+procesando vértices rápidamente, superados el 75% o algo asi de los vértices
+a algunos grupos se les enlentece el algoritmo cuando n es grande.
+
+
+Lo que ocurre es que dependiendo como implementen la resolucion de colisiones, con los ultimos vértices algunos grupos pierden tiempo buscando un lugar "libre".
+
+Una posibilidad es "desperdiciar" un poco de memoria y tomar una función de hash con rango 2n o 3n, para que no haya tantas colisiones sobre el final de la corrida.
+
+No es la unica solucion posible, pero deben testear para casos grandes a ver si su implementacion funciona correctamente.
+
+2) Otra forma es simplemente usar un array de n lugares,
+pero NO procesar UN lado por vez, sino cargarlos a todos, en memoria extra temporaria que luego liberan,
+y trabajar con todos los lados ya cargados.
+
+De que sirve cargar todos los lados?
+Una vez que tienen todos los lados cargados en memoria, pueden reordenarlos
+de acuerdo a sus vértices, y entonces construir el array en forma
+significativamente mas rápida.
+
+Esta forma de hacerlo es rápida y la estructura que queda es ágil,
+pero hay algunas tecnicalidades que hacen que algunos alumnos se pierdan
+durante la implementación.
+
+
+La elección entre 1) y 2) es probablemente a gusto personal.
+
+
+3) Una tercera posibilidad es usar algún tipo de estructura mas complicada pej un arbol balanceado.
+De esta forma se buscan los vértices mucho mas rápido.
+
+El problema con esto, que en teoría debería funcionar, es que muchos estudiantes
+que lo intentaron en años anteriores no lo hicieron bien, equivocandose en la implementacion.
+Algunos si, pero se ve que es dificil hacerlo bien. (yo nunca he intentado esto, asi
+que no puedo hablar por experiencia mia, sino de los alumnos)
+
+
+
+Entre las preguntas he visto que algunos estan haciendo reallocs para la construcción de los vecinos.
+
+Asumo que estan reservando memoria para los vecinos, y luego cada vez que agregan un vecino nuevo, hacen realloc de memoria.
+
+No estoy seguro cuanto les puede demorar hacer todos esos reallocs, puede depender de como sean los reallocs
+que hacen. (si hacen realloc de a uno o mas)
+
+Pero ademas no son necesarios pues eso es necesario solo si van cargando la informacion de cada
+lado a medida que leen los lados. Si los cargan a todos juntos, y los procesan, pueden determinar el grado de cada vértice y saber cuanta memoria reservar, si es que estan usando un array de vecinos por vértice.
+Por supuesto si usan el método de usar un solo array de 2m entradas, es incluso mas facil.
+
+
